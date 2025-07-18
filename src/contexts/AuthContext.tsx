@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
+import {jwtDecode }from 'jwt-decode';
 
 interface AuthContextType {
   user: User | null;
@@ -10,66 +11,64 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demonstration
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'John Student',
-    email: 'student@nexfern.com',
-    role: 'student',
-    dateJoined: '2024-01-15'
-  },
-  {
-    id: '2',
-    name: 'Jane Instructor',
-    email: 'instructor@nexfern.com',
-    role: 'instructor',
-    dateJoined: '2024-01-10'
-  },
-  {
-    id: '3',
-    name: 'Admin User',
-    email: 'admin@nexfern.com',
-    role: 'admin',
-    dateJoined: '2024-01-01'
-  }
-];
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is stored in localStorage
-    const storedUser = localStorage.getItem('nexfern_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    // Check if token is stored in localStorage
+    const token = localStorage.getItem('nexfern_token');
+    if (token) {
+      try {
+        const decoded: any = jwtDecode(token);
+        setUser({
+          id: decoded.userId,
+          name: decoded.name || '',
+          email: decoded.email,
+          role: decoded.role,
+          dateJoined: decoded.dateJoined || ''
+        });
+      } catch (e) {
+        setUser(null);
+        localStorage.removeItem('nexfern_token');
+      }
     }
     setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string, role: string): Promise<boolean> => {
     setIsLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const foundUser = mockUsers.find(u => u.email === email && u.role === role);
-    
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem('nexfern_user', JSON.stringify(foundUser));
-      setIsLoading(false);
-      return true;
+    try {
+      const res = await fetch('http://localhost:3001/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, role }),
+      });
+      const data = await res.json();
+      if (res.ok && data.token) {
+        localStorage.setItem('nexfern_token', data.token);
+        const decoded: any = jwtDecode(data.token);
+        setUser({
+          id: decoded.userId,
+          name: decoded.name || '',
+          email: decoded.email,
+          role: decoded.role,
+          dateJoined: decoded.dateJoined || ''
+        });
+        setIsLoading(false);
+        return true;
+      }
+    } catch (e) {
+      // handle error
     }
-    
     setIsLoading(false);
     return false;
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('nexfern_user');
+    localStorage.removeItem('nexfern_token');
+    localStorage.removeItem('token');
   };
 
   return (
