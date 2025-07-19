@@ -88,3 +88,30 @@ export interface Analytics {
   userGrowth: { month: string; students: number; instructors: number }[];
   coursePerformance: { courseName: string; enrollments: number; completionRate: number }[];
 }
+
+export interface AdminDashboardStats {
+  totalUsers: number;
+  activeCourses: number;
+  pendingApprovals: number;
+  revenue: number;
+}
+
+export interface SystemHealthItem {
+  label: string;
+  status: string;
+  value: string;
+}
+
+export interface PendingCourse {
+  course_id: string;
+  name: string;
+  instructor_id: string;
+  created_at: string;
+}
+
+export interface RecentActivity {
+  id: string;
+  type: string;
+  message: string;
+  time: string;
+}

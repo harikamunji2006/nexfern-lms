@@ -27,5 +27,67 @@ model User {
   is_active        Boolean   @default(true)
   password         String    @db.VarChar(255)
 
-  @@map("users") // Map this model to the existing 'users' table in your database
+  // Relations
+  courses          Course[]  @relation("InstructorCourses")
+  admin_activities AdminActivities[] @relation("UserActivities")
+
+  @@map("users")
+}
+
+model Course {
+  course_id        String    @id @default(uuid()) @db.Uuid
+  name             String    @db.VarChar(100)
+  description      String?
+  domain           String?
+  level            String?
+  thumbnail_url    String?
+  picture_url      String?
+  instructor_id    String?   @db.Uuid
+  total_hours      Int?
+  total_enrollments Int?     @default(0)
+  rating_avg       Float?    @default(0.0)
+  price            Float?    @default(0.00)
+  is_published     Boolean   @default(false)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @default(now())
+
+  // Relations
+  instructor       User?     @relation("InstructorCourses", fields: [instructor_id], references: [user_id])
+
+  @@map("courses")
+}
+
+model AdminSystemMetrics {
+  id                Int      @id @default(autoincrement())
+  revenue_total     Float?
+  pending_approvals Int?
+  storage_used_gb   Float?
+  db_storage_gb     Float?
+  api_response_avg_ms Float?
+  server_status     String?
+  recorded_at       DateTime @default(now())
+
+  @@map("admin_system_metrics")
+}
+
+model AdminActivities {
+  activity_id   String   @id @default(uuid()) @db.Uuid
+  activity_type String?
+  user_id       String?  @db.Uuid
+  description   String?
+  activity_time DateTime @default(now())
+
+  // Relations
+  user          User?    @relation("UserActivities", fields: [user_id], references: [user_id])
+
+  @@map("admin_activities")
+}
+
+model ApiResponseLog {
+  id               Int      @id @default(autoincrement())
+  path             String
+  method           String
+  response_time_ms Int
+  created_at       DateTime @default(now())
+  @@map("api_response_logs")
 }
